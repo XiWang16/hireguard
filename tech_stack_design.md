@@ -4,6 +4,57 @@ This document outlines the core technologies used (or intended to be used) in ou
 
 ## Frontend Architecture
 
+┌─────────────────────────────────────────────────────────┐
+│  FRONTEND (React + TS + Tailwind + TanStack + Zustand)  │
+│                                                         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────────────┐    │
+│  │ Pipeline │ │ Candidate│ │   Fairness Audit      │    │
+│  │ Dashboard│ │ Detail   │ │   Dashboard           │    │
+│  └──────────┘ └──────────┘ └──────────────────────┘    │
+│         │            │              │                    │
+│    TanStack Query  TanStack    TanStack Table           │
+│    (server state)  Router      + Recharts               │
+│         │          (routing)        │                    │
+│    Zustand (UI state: filters, selections, view mode)   │
+└────────────────────────┬────────────────────────────────┘
+                         │ Convex React hooks
+┌────────────────────────┴────────────────────────────────┐
+│  CONVEX BACKEND                                         │
+│                                                         │
+│  ┌─────────────────────────────────────────────┐        │
+│  │  Agent Layer (@convex-dev/agent)             │        │
+│  │                                              │        │
+│  │  Resume Parser Agent                         │        │
+│  │       ↓                                      │        │
+│  │  Skill Matcher Agent                         │        │
+│  │       ↓                                      │        │
+│  │  Ranking Agent                               │        │
+│  │       ↓ (writes decisions)                   │        │
+│  │  Fairness Auditor Agent (reads decisions,    │        │
+│  │       runs statistical tests, flags issues)  │        │
+│  └─────────────────────────────────────────────┘        │
+│                                                         │
+│  Tables: jobs, candidates, evaluations, auditReports,   │
+│          demographicStats, agentThreads                  │
+│                                                         │
+│  Scheduled Functions: hourly fairness sweep,            │
+│          daily aggregate report                          │
+│  Durable Workflows: candidate processing pipeline       │
+│  Vector Search: skill/experience matching               │
+│  File Storage: uploaded resumes (PDF)                   │
+└────────────────────────┬────────────────────────────────┘
+                         │ Convex actions call Lambda
+┌────────────────────────┴────────────────────────────────┐
+│  AWS (SST + CDK)                                        │
+│                                                         │
+│  Lambda: PDF text extraction (pdf-parse)                │
+│  Lambda: Heavy statistical compute (ANOVA, chi-square)  │
+│  S3: Resume archive + audit report exports              │
+│  SES: Alert emails when adverse impact detected         │
+│  Secrets Manager: LLM API keys                          │
+│  CloudWatch: Monitoring + alerting                      │
+└─────────────────────────────────────────────────────────┘
+
 ### 1. React
 * **Role in Codebase:** Serves as our foundational UI library for building component-driven user interfaces.
 * **Design Decision:** We chose React for its massive ecosystem, mature rendering models, and declarative component paradigm. Moving to modern React (like React 19) allows us to leverage concurrent rendering and optimized hooks.

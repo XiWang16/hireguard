@@ -1,40 +1,50 @@
-# Welcome to your Convex + React (Vite) app
+# HireGuard
 
-This is a [Convex](https://convex.dev/) project created with [`npm create convex`](https://www.npmjs.com/package/create-convex).
+**HireGuard** is a Multi-Agent Hiring System with a built-in Fairness Audit. It is designed to modernize and streamline the recruitment process by leveraging AI agents to assist in evaluating candidates while ensuring unbiased and fair hiring practices.
 
-After the initial setup (<2 minutes) you'll have a working full-stack app using:
+## System Overview
 
-- Convex as your backend (database, server logic)
-- [React](https://react.dev/) as your frontend (web page interactivity)
-- [Vite](https://vitest.dev/) for optimized web hosting
-- [Tailwind](https://tailwindcss.com/) for building great looking accessible UI
+HireGuard uses a distributed, agent-based architecture to process applications, summarize candidate profiles, and flag potential biases. It ensures transparency by keeping an immutable audit trail of all agent reasoning.
 
-## Get started
+### Core Features
+- **Multi-Agent Orchestration**: AI agents handle different aspects of the hiring pipeline (e.g., resume parsing, skill matching, initial screening).
+- **Fairness Audit**: Automated checks to ensure candidate evaluations are free from systemic biases.
+- **Real-Time Collaboration**: Live updates across all connected clients so recruiters can work together seamlessly.
 
-If you just cloned this codebase and didn't use `npm create convex`, run:
+## Tech Stack
 
-```
-npm install
-npm run dev
-```
+HireGuard is built on a modern, highly scalable, and fully type-safe stack:
 
-If you're reading this README on GitHub and want to use this template, run:
+### Frontend
+- **React (v19)**: The core UI library for building reactive, component-driven user interfaces.
+- **TypeScript**: Ensures end-to-end type safety across the entire application.
+- **Tailwind CSS (v4)**: A utility-first CSS framework for rapid, consistent, and maintainable styling colocated with components.
+- **TanStack (Query & Router)**: Used for precise, type-safe routing and managing complex server state caching (when interacting with external APIs).
+- **Zustand**: A lightweight, boilerplate-free state manager for handling transient client-side UI state (e.g., sidebar toggles, complex form steps).
 
-```
-npm create convex@latest -- -t react-vite
-```
+### Backend & Database
+- **Convex**: Our primary serverless backend and database. It natively pushes real-time database updates directly to React components via WebSockets, eliminating the need for manual data fetching and invalidation.
 
-## Learn more
+### Infrastructure (AWS)
+- **SST (Serverless Stack v3)**: Provides an incredible developer experience for deploying modern full-stack apps to AWS, including local Live Lambda Development.
+- **AWS CDK**: Infrastructure-as-code (IaC) allows us to provision AWS resources (like S3, SES, or custom queues) directly in TypeScript, keeping our infrastructure in sync with our codebase.
 
-To learn more about developing your project with Convex, check out:
+## Getting Started
 
-- The [Tour of Convex](https://docs.convex.dev/get-started) for a thorough introduction to Convex principles.
-- The rest of [Convex docs](https://docs.convex.dev/) to learn about all Convex features.
-- [Stack](https://stack.convex.dev/) for in-depth articles on advanced topics.
+To run this project locally:
 
-## Join the community
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-Join thousands of developers building full-stack apps with Convex:
+2. Start the development server (runs Vite and Convex concurrently):
+   ```bash
+   npm run dev
+   ```
 
-- Join the [Convex Discord community](https://convex.dev/community) to get help in real-time.
-- Follow [Convex on GitHub](https://github.com/get-convex/), star and contribute to the open-source implementation of Convex.
+3. Open your browser to the local URL provided by Vite (usually `http://localhost:5173`).
+
+## Project Structure
+- `/src`: Contains all React components, Zustand stores, and frontend logic.
+- `/convex`: Contains the database schema, backend functions (mutations/queries), and agent definitions.
