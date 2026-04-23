@@ -1,26 +1,135 @@
-export default function SettingsPage() {
+import { useState } from "react";
+
+type FieldDef =
+  | { type: "text" | "email"; label: string; value: string }
+  | { type: "toggle"; label: string; value: boolean };
+
+interface Section {
+  section: string;
+  fields: FieldDef[];
+}
+
+function ToggleSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-4">
-      <svg
-        width="48"
-        height="48"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--fg-3)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z" />
-        <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-      </svg>
-      <div className="text-center">
-        <p className="text-[15px] font-medium tracking-[-0.02em]" style={{ color: "var(--fg)" }}>
-          Settings
-        </p>
-        <p className="text-[13px] mt-1" style={{ color: "var(--fg-3)" }}>
-          Coming soon
-        </p>
+    <button
+      onClick={() => onChange(!on)}
+      className="shrink-0 transition-all"
+      style={{
+        width: "38px",
+        height: "22px",
+        borderRadius: "99px",
+        background: on ? "var(--accent)" : "var(--bg-3)",
+        padding: "2px",
+        cursor: "pointer",
+        border: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <div
+        className="w-[18px] h-[18px] rounded-full transition-all"
+        style={{
+          background: "#fff",
+          marginLeft: on ? "16px" : "0",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      />
+    </button>
+  );
+}
+
+export default function SettingsPage() {
+  const [sections, setSections] = useState<Section[]>([
+    {
+      section: "Profile",
+      fields: [
+        { type: "text",  label: "Full Name", value: "Xi Wang" },
+        { type: "email", label: "Email",     value: "xw471@cam.ac.uk" },
+        { type: "text",  label: "Role",      value: "HR Manager" },
+      ],
+    },
+    {
+      section: "Notifications",
+      fields: [
+        { type: "toggle", label: "Email alerts on risk flags",   value: true },
+        { type: "toggle", label: "Weekly digest",                value: true },
+        { type: "toggle", label: "Candidate status updates",     value: false },
+      ],
+    },
+    {
+      section: "Integrations",
+      fields: [
+        { type: "text", label: "ATS Connection",              value: "Greenhouse" },
+        { type: "text", label: "Background Check Provider",   value: "Checkr" },
+      ],
+    },
+  ]);
+
+  function toggleField(sIdx: number, fIdx: number) {
+    setSections((prev) =>
+      prev.map((s, si) =>
+        si !== sIdx
+          ? s
+          : {
+              ...s,
+              fields: s.fields.map((f, fi) =>
+                fi !== fIdx || f.type !== "toggle" ? f : { ...f, value: !f.value }
+              ),
+            }
+      )
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="p-5 max-w-[600px] flex flex-col gap-3.5">
+        {sections.map((s, si) => (
+          <div
+            key={s.section}
+            className="rounded-[12px] animate-fade-up"
+            style={{
+              background: "var(--bg-2)",
+              border: "1px solid var(--border)",
+              padding: "20px 22px",
+              boxShadow: "var(--shadow-sm)",
+              animationDelay: `${si * 60}ms`,
+            }}
+          >
+            <div
+              className="text-[13.5px] font-medium mb-3.5"
+              style={{ color: "var(--fg)" }}
+            >
+              {s.section}
+            </div>
+            {s.fields.map((f, fi) => (
+              <div
+                key={f.label}
+                className="flex items-center justify-between py-2.5"
+                style={{
+                  borderBottom:
+                    fi < s.fields.length - 1 ? "1px solid var(--border-2)" : "none",
+                }}
+              >
+                <span className="text-[13.5px]" style={{ color: "var(--fg-2)" }}>
+                  {f.label}
+                </span>
+                {f.type === "toggle" ? (
+                  <ToggleSwitch
+                    on={f.value as boolean}
+                    onChange={() => toggleField(si, fi)}
+                  />
+                ) : (
+                  <span
+                    className="text-[13.5px] font-medium"
+                    style={{ color: "var(--fg)" }}
+                  >
+                    {f.value as string}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

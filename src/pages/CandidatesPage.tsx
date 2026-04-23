@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -11,6 +11,7 @@ import clsx from "clsx";
 type Stage = "Screening" | "Interview" | "Review" | "Offer";
 type RiskLevel = "low" | "medium" | "high";
 type CheckStatus = "pass" | "fail" | "pending";
+type DetailTab = "overview" | "checks" | "notes";
 
 interface Candidate {
   _id: string;
@@ -49,90 +50,75 @@ function avatarColors(name: string) {
   };
 }
 
-// ─── Badges ───────────────────────────────────────────────────────────────────
+// ─── Stage & risk helpers ─────────────────────────────────────────────────────
 
-function StageBadge({ stage }: { stage: Stage }) {
-  const map: Record<Stage, { bg: string; color: string }> = {
-    Screening: { bg: "var(--accent-dim)", color: "var(--accent)" },
-    Interview: { bg: "var(--amber-dim)",  color: "var(--amber)" },
-    Review:    { bg: "var(--amber-dim)",  color: "var(--amber)" },
-    Offer:     { bg: "var(--green-dim)",  color: "var(--green)" },
+function stageBg(stage: Stage) {
+  const map: Record<Stage, string> = {
+    Screening: "var(--accent-dim)",
+    Interview: "var(--border)",
+    Review:    "var(--amber-dim)",
+    Offer:     "var(--green-dim)",
   };
-  const s = map[stage] ?? map.Screening;
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-      style={{ background: s.bg, color: s.color }}
-    >
-      {stage}
-    </span>
-  );
+  return map[stage] ?? "var(--bg-3)";
 }
 
-function RiskBadge({ risk }: { risk: RiskLevel }) {
-  const map: Record<RiskLevel, { bg: string; color: string; label: string }> = {
-    low:    { bg: "var(--green-dim)", color: "var(--green)", label: "Low Risk" },
-    medium: { bg: "var(--amber-dim)", color: "var(--amber)", label: "Med Risk" },
-    high:   { bg: "var(--red-dim)",   color: "var(--red)",   label: "High Risk" },
+function stageColor(stage: Stage) {
+  const map: Record<Stage, string> = {
+    Screening: "var(--accent)",
+    Interview: "var(--fg-3)",
+    Review:    "var(--amber)",
+    Offer:     "var(--green)",
   };
-  const s = map[risk] ?? map.low;
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-      style={{ background: s.bg, color: s.color }}
-    >
-      {s.label}
-    </span>
-  );
+  return map[stage] ?? "var(--fg-2)";
+}
+
+function riskColor(risk: RiskLevel) {
+  return risk === "high" ? "var(--red)" : risk === "medium" ? "var(--amber)" : "var(--green)";
+}
+function riskBg(risk: RiskLevel) {
+  return risk === "high" ? "var(--red-dim)" : risk === "medium" ? "var(--amber-dim)" : "var(--green-dim)";
 }
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
-function ScoreRing({ score }: { score: number }) {
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const [animated, setAnimated] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), 60);
-    return () => clearTimeout(t);
-  }, [score]);
-
-  const dash = animated ? (score / 100) * circumference : 0;
-  const color =
-    score >= 75 ? "var(--green)" : score >= 50 ? "var(--amber)" : "var(--red)";
-
+function ScoreRing({ score, size = 54 }: { score: number; size?: number }) {
+  const r = (size - 7) / 2;
+  const circ = 2 * Math.PI * r;
+  const color = score >= 80 ? "var(--green)" : score >= 60 ? "var(--amber)" : "var(--red)";
   return (
-    <svg width="52" height="52" viewBox="0 0 52 52">
-      <circle
-        cx="26" cy="26" r={radius}
-        fill="none"
-        stroke="var(--bg-3)"
-        strokeWidth="3.5"
-      />
-      <circle
-        cx="26" cy="26" r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeDasharray={`${dash} ${circumference}`}
-        transform="rotate(-90 26 26)"
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)" }}
+      >
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--bg-3)" strokeWidth={3.5} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={3.5}
+          strokeDasharray={`${(circ * score) / 100} ${circ * (1 - score / 100)}`}
+          strokeLinecap="round"
+          style={{ transition: "stroke-dasharray 0.9s cubic-bezier(0.25,0.46,0.45,0.94)" }}
+        />
+      </svg>
+      <span
         style={{
-          transition: "stroke-dasharray 0.8s cubic-bezier(0.25,0.46,0.45,0.94)",
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%,-50%)",
+          fontSize: size * 0.24,
+          fontWeight: 600,
+          letterSpacing: "-0.03em",
+          color,
         }}
-      />
-      <text
-        x="26" y="31"
-        textAnchor="middle"
-        fontSize="11"
-        fontWeight="600"
-        letterSpacing="-0.5"
-        fill={color}
       >
         {score}
-      </text>
-    </svg>
+      </span>
+    </div>
   );
 }
 
@@ -142,57 +128,42 @@ function CheckItem({
   label,
   detail,
   status,
-  isLast,
+  index,
 }: {
   label: string;
   detail: string;
   status: CheckStatus;
-  isLast: boolean;
+  index: number;
 }) {
-  const icon =
-    status === "pass" ? (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-      </svg>
-    ) : status === "fail" ? (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-      </svg>
-    ) : (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-      </svg>
-    );
-
-  const badgeStyle =
-    status === "pass"
-      ? { bg: "var(--green-dim)", color: "var(--green)", label: "Pass" }
-      : status === "fail"
-        ? { bg: "var(--red-dim)", color: "var(--red)", label: "Fail" }
-        : { bg: "var(--amber-dim)", color: "var(--amber)", label: "Pending" };
+  const isPass = status === "pass";
+  const isFail = status === "fail";
+  const color = isPass ? "var(--green)" : isFail ? "var(--red)" : "var(--amber)";
+  const bg    = isPass ? "var(--green-dim)" : isFail ? "var(--red-dim)" : "var(--amber-dim)";
+  const icon  = isPass
+    ? <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    : isFail
+    ? <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    : <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />;
 
   return (
     <div
-      className={clsx("flex items-center gap-3 py-3", !isLast && "border-b")}
-      style={{ borderColor: "var(--border)" }}
+      className="flex items-center gap-3 py-[11px] border-b last:border-0 animate-fade-up"
+      style={{ borderColor: "var(--border-2)", animationDelay: `${index * 40}ms` }}
     >
-      <span className="shrink-0">{icon}</span>
+      <span className="shrink-0" style={{ color }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {icon}
+        </svg>
+      </span>
       <div className="flex-1 min-w-0">
-        <p
-          className="text-[13px] font-medium"
-          style={{ color: "var(--fg)" }}
-        >
-          {label}
-        </p>
-        <p className="text-[12px] truncate" style={{ color: "var(--fg-3)" }}>
-          {detail}
-        </p>
+        <div className="text-[13.5px] font-medium" style={{ color: "var(--fg)" }}>{label}</div>
+        <div className="text-[12px] mt-0.5" style={{ color: "var(--fg-3)" }}>{detail}</div>
       </div>
       <span
-        className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0"
-        style={{ background: badgeStyle.bg, color: badgeStyle.color }}
+        className="text-[11.5px] font-medium px-2.5 py-0.5 rounded-full capitalize shrink-0"
+        style={{ background: bg, color }}
       >
-        {badgeStyle.label}
+        {status}
       </span>
     </div>
   );
@@ -201,15 +172,18 @@ function CheckItem({
 // ─── Candidate detail panel ───────────────────────────────────────────────────
 
 function CandidateDetail({ candidate }: { candidate: Candidate }) {
-  const checks = useQuery(
-    api.functions.backgroundChecks.listForCandidate,
-    { candidateId: candidate._id as Id<"candidates"> }
-  );
+  const [tab, setTab] = useState<DetailTab>("overview");
+  const checks = useQuery(api.functions.backgroundChecks.listForCandidate, {
+    candidateId: candidate._id as Id<"candidates">,
+  });
   const advanceStage = useMutation(api.functions.candidates.updateCandidateStatusPublic);
-  const [advancingKey, setAdvancingKey] = useState(0);
 
   const av = avatarColors(candidate.name);
   const initials = getInitials(candidate.name);
+
+  const passes  = (checks ?? []).filter((c) => c.status === "pass").length;
+  const fails   = (checks ?? []).filter((c) => c.status === "fail").length;
+  const pending = (checks ?? []).filter((c) => c.status === "pending").length;
 
   async function handleAdvance() {
     const next =
@@ -225,107 +199,169 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
       candidateId: candidate._id as Id<"candidates">,
       status: next as "shortlisted" | "rejected" | "hired",
     });
-    setAdvancingKey((k) => k + 1);
   }
 
   return (
-    <div
-      key={advancingKey + candidate._id}
-      className="h-full overflow-y-auto animate-scale-in"
-    >
-      <div className="p-6">
-        {/* Header row */}
-        <div className="flex items-start gap-4 mb-5">
+    <div key={candidate._id} className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+      {/* Hero header */}
+      <div
+        className="px-6 pt-6 pb-0 border-b"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div className="flex items-start gap-4 mb-4">
           <div
-            className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-[15px] font-semibold shrink-0"
+            className="w-14 h-14 rounded-full flex items-center justify-center text-[15px] font-semibold shrink-0"
             style={{ background: av.bg, border: av.border, color: av.color }}
           >
             {initials}
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-2">
               <h2
-                className="text-[18px] font-semibold tracking-[-0.03em]"
+                className="text-[19px] font-medium tracking-[-0.025em]"
                 style={{ color: "var(--fg)" }}
               >
                 {candidate.name}
               </h2>
               {candidate.verified && (
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--accent)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               )}
             </div>
-            <p
-              className="text-[13px] mb-2"
-              style={{ color: "var(--fg-2)" }}
-            >
+            <div className="text-[13.5px] mt-0.5" style={{ color: "var(--fg-2)" }}>
               {candidate.role}
-            </p>
-            {candidate.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {candidate.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                    style={{ background: "var(--bg-3)", color: "var(--fg-2)" }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          {candidate.score !== null && (
-            <div className="shrink-0">
-              <ScoreRing score={candidate.score} />
             </div>
-          )}
-        </div>
-
-        {/* Badges row */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
-          <StageBadge stage={candidate.stage} />
-          <RiskBadge risk={candidate.riskLevel} />
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-            style={{ background: "var(--bg-3)", color: "var(--fg-2)" }}
-          >
-            Applied {new Date(candidate.appliedAt).toLocaleDateString()}
-          </span>
-        </div>
-
-        {/* Background checks */}
-        <div
-          className="rounded-[10px] mb-5 overflow-hidden"
-          style={{ background: "var(--bg-2)", boxShadow: "var(--shadow-sm)" }}
-        >
-          <div
-            className="px-4 py-3 border-b"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <h3
-              className="text-[12px] font-semibold tracking-[-0.01em]"
-              style={{ color: "var(--fg-2)" }}
-            >
-              BACKGROUND CHECKS
-            </h3>
-          </div>
-          <div className="px-4">
-            {!checks || checks.length === 0 ? (
-              <p
-                className="py-5 text-[13px] text-center"
-                style={{ color: "var(--fg-3)" }}
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span
+                className="text-[12px] px-2 py-0.5 rounded-full font-medium"
+                style={{ background: stageBg(candidate.stage), color: stageColor(candidate.stage) }}
               >
+                Stage: {candidate.stage}
+              </span>
+              <span
+                className="text-[12px] px-2 py-0.5 rounded-full font-medium capitalize"
+                style={{ background: riskBg(candidate.riskLevel), color: riskColor(candidate.riskLevel) }}
+              >
+                Risk: {candidate.riskLevel}
+              </span>
+              <span
+                className="text-[12px] px-2 py-0.5 rounded-full"
+                style={{ background: "var(--bg-3)", color: "var(--fg-3)" }}
+              >
+                Applied {new Date(candidate.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              {candidate.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[12px] px-2 py-0.5 rounded-full"
+                  style={{ background: "var(--bg-3)", color: "var(--fg-2)" }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          {candidate.score !== null && <ScoreRing score={candidate.score} size={58} />}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-0">
+          {(["overview", "checks", "notes"] as const).map((id) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className="px-4 py-[9px] text-[13px] font-medium capitalize transition-colors"
+              style={{
+                color: tab === id ? "var(--fg)" : "var(--fg-3)",
+                paddingBottom: "7px",
+                boxShadow: tab === id ? `inset 0 -2px 0 var(--accent)` : "none",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {id.charAt(0).toUpperCase() + id.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div className="px-6 py-[22px]">
+        {tab === "overview" && (
+          <div className="flex flex-col gap-5 animate-fade-in">
+            {/* Check summary mini-cards */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {(
+                [
+                  [passes,  "Passed",  "var(--green)", "var(--green-dim)"],
+                  [pending, "Pending", "var(--amber)", "var(--amber-dim)"],
+                  [fails,   "Failed",  "var(--red)",   "var(--red-dim)"],
+                ] as const
+              ).map(([v, l, color, bg]) => (
+                <div
+                  key={l}
+                  className="rounded-[8px] px-3.5 py-3"
+                  style={{ background: bg, border: `1px solid ${color}33` }}
+                >
+                  <div
+                    className="text-[22px] font-medium tracking-[-0.04em]"
+                    style={{ color }}
+                  >
+                    {v}
+                  </div>
+                  <div className="text-[12px] mt-0.5" style={{ color }}>
+                    {l}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleAdvance}
+                disabled={candidate.status === "hired"}
+                className="flex-1 py-2.5 rounded-[8px] text-[13.5px] font-medium transition-all hover:-translate-y-px hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: "var(--accent)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  boxShadow: "0 2px 8px var(--accent-mid)",
+                }}
+              >
+                Advance Stage →
+              </button>
+              <button
+                className="flex-1 py-2.5 rounded-[8px] text-[13.5px] font-medium border transition-all hover:-translate-y-px"
+                style={{
+                  background: "var(--bg-3)",
+                  color: "var(--fg)",
+                  border: "1px solid var(--border)",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Flag for Review
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "checks" && (
+          <div className="animate-fade-in">
+            <div
+              className="text-[12px] font-semibold tracking-[0.06em] uppercase mb-3"
+              style={{ color: "var(--fg-3)" }}
+            >
+              Background Checks · {candidate.name}
+            </div>
+            {!checks || checks.length === 0 ? (
+              <p className="text-[13px] py-8 text-center" style={{ color: "var(--fg-3)" }}>
                 No checks run yet.
               </p>
             ) : (
@@ -335,34 +371,33 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
                   label={check.label}
                   detail={check.detail}
                   status={check.status}
-                  isLast={i === checks.length - 1}
+                  index={i}
                 />
               ))
             )}
           </div>
-        </div>
+        )}
 
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleAdvance}
-            disabled={candidate.status === "hired"}
-            className="flex-1 py-2 rounded-[6px] text-[13px] font-medium transition-all hover:opacity-[0.88] disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: "var(--accent)", color: "white" }}
-          >
-            Advance Stage
-          </button>
-          <button
-            className="flex-1 py-2 rounded-[6px] text-[13px] font-medium border transition-all hover:bg-[--bg-3]"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--fg-2)",
-              background: "transparent",
-            }}
-          >
-            Flag for Review
-          </button>
-        </div>
+        {tab === "notes" && (
+          <div className="animate-fade-in">
+            <div
+              className="text-[12px] font-semibold tracking-[0.06em] uppercase mb-3"
+              style={{ color: "var(--fg-3)" }}
+            >
+              Hiring Notes
+            </div>
+            <p
+              className="text-[14px] leading-[1.65] rounded-[8px] px-4 py-4"
+              style={{
+                color: "var(--fg-2)",
+                background: "var(--bg-3)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              {candidate.email}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -372,25 +407,29 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
 
 function EmptyDetail() {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3">
-      <svg
-        width="40"
-        height="40"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(--fg-3)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <div className="h-full flex flex-col items-center justify-center gap-3" style={{ color: "var(--fg-3)" }}>
+      <div
+        className="w-[52px] h-[52px] rounded-full flex items-center justify-center"
+        style={{ background: "var(--bg-3)" }}
       >
-        <path d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-      </svg>
-      <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>
-        Select a candidate to view details
-      </p>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0z M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </div>
+      <span className="text-[14px] font-medium" style={{ color: "var(--fg-3)" }}>
+        Select a candidate
+      </span>
+      <span className="text-[13px]" style={{ color: "var(--fg-3)" }}>
+        Details appear here
+      </span>
     </div>
   );
 }
+
+// ─── Stage filter tabs ────────────────────────────────────────────────────────
+
+const STAGE_FILTERS = ["All", "Screening", "Interview", "Review", "Offer"] as const;
+type StageFilter = (typeof STAGE_FILTERS)[number];
 
 // ─── Candidates page ──────────────────────────────────────────────────────────
 
@@ -401,92 +440,113 @@ export default function CandidatesPage() {
   const { selectedCandidateId, setSelectedCandidateId } = useUIStore();
   const { searchQuery, setFilter } = useFilterStore();
   const searchRef = useRef<HTMLInputElement>(null);
+  const [stageFilter, setStageFilter] = useState<StageFilter>("All");
 
   const filtered = (candidates ?? []).filter((c) => {
+    const matchStage = stageFilter === "All" || c.stage === stageFilter;
+    if (!matchStage) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(q) || c.role.toLowerCase().includes(q)
-    );
+    return c.name.toLowerCase().includes(q) || c.role.toLowerCase().includes(q);
   });
 
   const selectedCandidate =
     (candidates ?? []).find((c) => c._id === selectedCandidateId) ?? null;
 
   return (
-    <div className="h-full grid overflow-hidden" style={{ gridTemplateColumns: "1fr 1.6fr" }}>
-      {/* ── Left: candidate list ─────────────────────────────────── */}
+    <div
+      className="h-full grid overflow-hidden"
+      style={{ gridTemplateColumns: "320px 1fr" }}
+    >
+      {/* ── Left: candidate list ──────────────────────────────────── */}
       <div
         className="flex flex-col border-r overflow-hidden"
-        style={{ borderColor: "var(--border)" }}
+        style={{
+          background: "var(--bg-2)",
+          borderColor: "var(--border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
       >
-        {/* Header */}
+        {/* Header + search + stage tabs */}
         <div
-          className="flex items-center justify-between px-4 py-3.5 border-b shrink-0"
+          className="px-3.5 pt-4 pb-3 border-b shrink-0"
           style={{ borderColor: "var(--border)" }}
         >
-          <div className="flex items-center gap-2">
-            <h2
-              className="text-[13px] font-semibold tracking-[-0.02em]"
-              style={{ color: "var(--fg)" }}
-            >
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[14px] font-medium" style={{ color: "var(--fg)" }}>
               All Candidates
-            </h2>
-            {candidates && (
-              <span
-                className="px-2 py-0.5 rounded-full text-[11px] font-medium"
-                style={{ background: "var(--bg-3)", color: "var(--fg-2)" }}
-              >
-                {filtered.length}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Search */}
-        <div
-          className="px-3 py-2.5 border-b shrink-0"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <label className="flex items-center gap-2 px-3 py-2 rounded-[6px]" style={{ background: "var(--bg-3)" }}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--fg-3)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            </span>
+            <span
+              className="text-[12px] px-2 py-0.5 rounded-full"
+              style={{ background: "var(--bg-3)", color: "var(--fg-3)" }}
             >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
+              {filtered.length}
+            </span>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-2.5">
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2"
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="var(--fg-3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
             <input
               ref={searchRef}
               type="text"
-              placeholder="Search candidates…"
+              placeholder="Search name, role, team…"
               value={searchQuery}
               onChange={(e) => setFilter("searchQuery", e.target.value)}
-              className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[--fg-3]"
-              style={{ color: "var(--fg)" }}
+              className="w-full pl-8 pr-3 py-2 text-[13px] rounded-[8px] outline-none transition-all"
+              style={{
+                background: "var(--bg-3)",
+                border: "1px solid var(--border)",
+                color: "var(--fg)",
+                fontFamily: "inherit",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--accent)";
+                e.target.style.boxShadow = "0 0 0 2.5px var(--accent-dim)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "var(--border)";
+                e.target.style.boxShadow = "none";
+              }}
             />
-          </label>
+          </div>
+
+          {/* Stage filter pills */}
+          <div className="flex gap-1 overflow-x-auto pb-0.5">
+            {STAGE_FILTERS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStageFilter(s)}
+                className="px-2.5 py-1 rounded-full text-[12px] font-medium whitespace-nowrap transition-all shrink-0"
+                style={{
+                  background: stageFilter === s ? "var(--accent)" : "var(--bg-3)",
+                  color: stageFilter === s ? "#fff" : "var(--fg-3)",
+                  border: `1px solid ${stageFilter === s ? "var(--accent)" : "var(--border)"}`,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-1.5 py-2">
           {!candidates ? (
             <div className="flex items-center justify-center h-32">
-              <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>
-                Loading…
-              </p>
+              <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>Loading…</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex items-center justify-center h-32">
-              <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>
-                No candidates found.
-              </p>
+              <p className="text-[13px]" style={{ color: "var(--fg-3)" }}>No results</p>
             </div>
           ) : (
             filtered.map((c, i) => {
@@ -495,19 +555,17 @@ export default function CandidatesPage() {
               const selected = c._id === selectedCandidateId;
 
               return (
-                <button
+                <div
                   key={c._id}
                   onClick={() => setSelectedCandidateId(selected ? null : c._id)}
                   className={clsx(
-                    "w-full flex items-center gap-3 px-4 py-3 text-left border-b transition-colors animate-slide-in-left",
-                    selected ? "border-l-2" : "hover:bg-[--bg-3]"
+                    "flex items-center gap-3 px-2.5 py-2.5 rounded-[8px] cursor-pointer transition-colors animate-slide-in-left",
+                    !selected && "hover:bg-[--bg-3]"
                   )}
                   style={{
-                    borderBottomColor: "var(--border)",
-                    borderLeftColor: selected ? "var(--accent)" : undefined,
-                    background: selected ? "var(--accent-dim)" : undefined,
-                    animationDelay: `${i * 30}ms`,
-                    paddingLeft: selected ? "14px" : undefined,
+                    background: selected ? "var(--accent-dim)" : "transparent",
+                    borderLeft: `2.5px solid ${selected ? "var(--accent)" : "transparent"}`,
+                    animationDelay: `${i * 35}ms`,
                   }}
                 >
                   <div
@@ -519,47 +577,53 @@ export default function CandidatesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span
-                        className="text-[13.5px] font-medium tracking-[-0.02em] truncate"
+                        className="text-[14px] font-medium truncate"
                         style={{ color: selected ? "var(--accent)" : "var(--fg)" }}
                       >
                         {c.name}
                       </span>
                       {c.verified && (
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke={selected ? "var(--accent)" : "var(--accent)"}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="shrink-0"
-                        >
-                          <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       )}
                     </div>
-                    <p
-                      className="text-[12px] truncate"
-                      style={{ color: "var(--fg-3)" }}
-                    >
+                    <p className="text-[12px] truncate mt-0.5" style={{ color: "var(--fg-3)" }}>
                       {c.role}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <StageBadge stage={c.stage} />
-                    <RiskBadge risk={c.riskLevel} />
+                    <span
+                      className="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap"
+                      style={{ background: stageBg(c.stage), color: stageColor(c.stage) }}
+                    >
+                      {c.stage}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span
+                        className="text-[11px] font-medium capitalize px-2 py-0.5 rounded-full"
+                        style={{ background: riskBg(c.riskLevel), color: riskColor(c.riskLevel) }}
+                      >
+                        {c.riskLevel} risk
+                      </span>
+                    </div>
                   </div>
-                </button>
+                </div>
               );
             })
           )}
         </div>
       </div>
 
-      {/* ── Right: candidate detail ──────────────────────────────── */}
-      <div className="overflow-hidden" style={{ background: "var(--bg)" }}>
+      {/* ── Right: candidate detail ───────────────────────────────── */}
+      <div
+        className="overflow-y-auto"
+        style={{
+          background: "var(--bg-2)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
         {selectedCandidate ? (
           <CandidateDetail candidate={selectedCandidate} />
         ) : (
