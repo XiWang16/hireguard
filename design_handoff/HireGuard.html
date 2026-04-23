@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HireGuard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F8F7F5;
+    --bg-2: #EFEDE9;
+    --bg-3: #E5E2DC;
+    --fg: #141311;
+    --fg-2: #6B6860;
+    --fg-3: #9E9B96;
+    --border: rgba(0,0,0,0.08);
+    --border-2: rgba(0,0,0,0.05);
+    --accent: oklch(0.62 0.12 210);
+    --accent-dim: oklch(0.62 0.12 210 / 0.12);
+    --accent-mid: oklch(0.62 0.12 210 / 0.25);
+    --green: oklch(0.58 0.12 155);
+    --green-dim: oklch(0.58 0.12 155 / 0.12);
+    --amber: oklch(0.65 0.13 72);
+    --amber-dim: oklch(0.65 0.13 72 / 0.12);
+    --red: oklch(0.58 0.14 22);
+    --red-dim: oklch(0.58 0.14 22 / 0.12);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --transition: 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-slow: 350ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .dark {
+    --bg: #111110;
+    --bg-2: #1A1917;
+    --bg-3: #242220;
+    --fg: #F2F0EB;
+    --fg-2: #9C9A95;
+    --fg-3: #5C5A56;
+    --border: rgba(255,255,255,0.07);
+    --border-2: rgba(255,255,255,0.04);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+    --shadow: 0 4px 16px rgba(0,0,0,0.30);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.45);
+  }
+
+  html, body, #root {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 99px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+  }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .anim-fade-up { animation: fadeUp var(--transition-slow) both; }
+  .anim-fade    { animation: fadeIn var(--transition-slow) both; }
+  .anim-scale   { animation: scaleIn var(--transition-slow) both; }
+  .anim-slide-right { animation: slideInRight var(--transition-slow) both; }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+const CANDIDATES = [
+  { id:1, name:"Evelyn Hart",    role:"Senior Engineer",      stage:"Offer",      risk:"low",    score:94, date:"Apr 21", avatar:"EH", tags:["Backend","Systems"], verified:true },
+  { id:2, name:"Marcus Lin",     role:"Product Manager",      stage:"Interview",  risk:"medium", score:71, date:"Apr 20", avatar:"ML", tags:["Strategy","B2B"],   verified:false },
+  { id:3, name:"Priya Sharma",   role:"Design Lead",          stage:"Screening",  risk:"low",    score:88, date:"Apr 19", avatar:"PS", tags:["UX","Research"],     verified:true },
+  { id:4, name:"Noah Clarke",    role:"Data Scientist",       stage:"Review",     risk:"high",   score:43, date:"Apr 18", avatar:"NC", tags:["ML","Python"],       verified:false },
+  { id:5, name:"Sofia Reyes",    role:"Frontend Engineer",    stage:"Interview",  risk:"low",    score:91, date:"Apr 17", avatar:"SR", tags:["React","TypeScript"],verified:true },
+  { id:6, name:"James Okafor",   role:"DevOps Engineer",      stage:"Screening",  risk:"medium", score:67, date:"Apr 16", avatar:"JO", tags:["AWS","Terraform"],   verified:false },
+  { id:7, name:"Aiko Tanaka",    role:"ML Engineer",          stage:"Offer",      risk:"low",    score:96, date:"Apr 15", avatar:"AT", tags:["PyTorch","LLMs"],    verified:true },
+  { id:8, name:"Liam Foster",    role:"Backend Engineer",     stage:"Review",     risk:"medium", score:58, date:"Apr 14", avatar:"LF", tags:["Go","Kubernetes"],   verified:false },
+];
+
+const ACTIVITIES = [
+  { id:1, text:"Background check completed", sub:"Evelyn Hart · Senior Engineer", time:"2m ago",  type:"success" },
+  { id:2, text:"Risk flag raised",            sub:"Noah Clarke · Data Scientist",  time:"18m ago", type:"warning" },
+  { id:3, text:"Reference verified",          sub:"Aiko Tanaka · ML Engineer",     time:"1h ago",  type:"success" },
+  { id:4, text:"Interview scheduled",         sub:"Marcus Lin · Product Manager",  time:"3h ago",  type:"info" },
+  { id:5, text:"Document uploaded",           sub:"Sofia Reyes · Frontend Eng.",   time:"5h ago",  type:"info" },
+];
+
+const CHECKS = [
+  { label:"Identity Verification",  status:"pass",    detail:"Government ID confirmed" },
+  { label:"Employment History",      status:"pass",    detail:"3 of 3 employers verified" },
+  { label:"Education Records",       status:"pass",    detail:"Degree confirmed" },
+  { label:"Criminal Background",     status:"pending", detail:"Processing — est. 24h" },
+  { label:"Credit Check",            status:"fail",    detail:"Unable to retrieve records" },
+  { label:"Reference Checks",        status:"pass",    detail:"2 of 2 references positive" },
+];
+
+const NAV = [
+  { id:"dashboard", label:"Dashboard",   icon:"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+  { id:"candidates", label:"Candidates",  icon:"M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" },
+  { id:"checks",     label:"Checks",      icon:"M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-2.981z" },
+  { id:"reports",    label:"Reports",     icon:"M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+  { id:"settings",   label:"Settings",    icon:"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const riskColor = r => r === "low" ? "var(--green)" : r === "medium" ? "var(--amber)" : "var(--red)";
+const riskBg    = r => r === "low" ? "var(--green-dim)" : r === "medium" ? "var(--amber-dim)" : "var(--red-dim)";
+const stageColor = s => s === "Offer" ? "var(--green)" : s === "Screening" ? "var(--accent)" : s === "Review" ? "var(--amber)" : "var(--fg-3)";
+const stageBg    = s => s === "Offer" ? "var(--green-dim)" : s === "Screening" ? "var(--accent-dim)" : s === "Review" ? "var(--amber-dim)" : "var(--border)";
+
+const Icon = ({ d, size=16, stroke="currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    {d.split(' M').map((part,i) => <path key={i} d={i===0?part:'M'+part} />)}
+  </svg>
+);
+
+const Avatar = ({ initials, size=32, color }) => {
+  const hue = (initials.charCodeAt(0)*7 + initials.charCodeAt(1)*13) % 360;
+  return (
+    <div style={{
+      width:size, height:size, borderRadius:"50%",
+      background:`oklch(0.62 0.10 ${hue} / 0.18)`,
+      border:`1.5px solid oklch(0.62 0.10 ${hue} / 0.30)`,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontSize:size*0.35, fontWeight:500, letterSpacing:"0.02em",
+      color:`oklch(0.55 0.12 ${hue})`, flexShrink:0,
+      transition: "transform var(--transition)",
+    }}>{initials}</div>
+  );
+};
+
+// Score ring
+const ScoreRing = ({ score, size=48 }) => {
+  const r = (size-6)/2, circ = 2*Math.PI*r;
+  const pct = score/100, dash = circ*pct, gap = circ*(1-pct);
+  const color = score >= 80 ? "var(--green)" : score >= 60 ? "var(--amber)" : "var(--red)";
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{transform:"rotate(-90deg)", flexShrink:0}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg-3)" strokeWidth={3}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={3}
+        strokeDasharray={`${dash} ${gap}`} strokeLinecap="round"
+        style={{transition:"stroke-dasharray 0.8s cubic-bezier(0.25,0.46,0.45,0.94)"}}/>
+    </svg>
+  );
+};
+
+// ─── Components ──────────────────────────────────────────────────────────────
+
+const StatCard = ({ label, value, delta, icon, delay=0 }) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(()=>setVisible(true), delay); return ()=>clearTimeout(t); }, [delay]);
+  return (
+    <div style={{
+      opacity: visible?1:0, transform: visible?"translateY(0)":"translateY(12px)",
+      transition:"opacity 0.45s ease, transform 0.45s ease",
+      background:"var(--bg-2)", border:"1px solid var(--border)",
+      borderRadius:"var(--radius)", padding:"20px 22px",
+      display:"flex", flexDirection:"column", gap:12,
+      boxShadow:"var(--shadow-sm)",
+    }}>
+      <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+        <span style={{fontSize:13, color:"var(--fg-2)", fontWeight:400, letterSpacing:"0.01em"}}>{label}</span>
+        <div style={{color:"var(--fg-3)", opacity:0.7}}><Icon d={icon} size={15}/></div>
+      </div>
+      <div style={{display:"flex", alignItems:"baseline", gap:8}}>
+        <span style={{fontSize:28, fontWeight:500, letterSpacing:"-0.03em", color:"var(--fg)"}}>{value}</span>
+        {delta && <span style={{fontSize:12, color: delta.startsWith("+")?'var(--green)':'var(--red)', fontWeight:500}}>{delta}</span>}
+      </div>
+    </div>
+  );
+};
+
+const CandidateRow = ({ c, selected, onClick, delay=0 }) => {
+  const [vis, setVis] = useState(false);
+  const [hov, setHov] = useState(false);
+  useEffect(() => { const t = setTimeout(()=>setVis(true), delay); return ()=>clearTimeout(t); }, [delay]);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        opacity:vis?1:0, transform:vis?"translateX(0)":"translateX(-8px)",
+        transition:`opacity 0.4s ease, transform 0.4s ease, background var(--transition)`,
+        display:"flex", alignItems:"center", gap:14, padding:"12px 14px",
+        borderRadius:"var(--radius-sm)", cursor:"pointer",
+        background: selected ? "var(--accent-dim)" : hov ? "var(--bg-3)" : "transparent",
+        borderLeft: selected ? "2px solid var(--accent)" : "2px solid transparent",
+      }}
+    >
+      <Avatar initials={c.avatar} size={36}/>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{display:"flex", alignItems:"center", gap:6}}>
+          <span style={{fontSize:13.5, fontWeight:500, color:"var(--fg)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{c.name}</span>
+          {c.verified && <span style={{color:"var(--accent)", lineHeight:0}}><Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" size={13}/></span>}
+        </div>
+        <div style={{fontSize:12, color:"var(--fg-3)", marginTop:2}}>{c.role}</div>
+      </div>
+      <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4}}>
+        <span style={{
+          fontSize:11, fontWeight:500, letterSpacing:"0.02em",
+          color:stageColor(c.stage), background:stageBg(c.stage),
+          padding:"2px 8px", borderRadius:99,
+        }}>{c.stage}</span>
+        <span style={{fontSize:11, color:riskColor(c.risk), background:riskBg(c.risk), padding:"2px 7px", borderRadius:99, fontWeight:500}}>
+          {c.risk}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const CheckItem = ({ check, delay=0 }) => {
+  const [vis, setVis] = useState(false);
+  useEffect(() => { const t = setTimeout(()=>setVis(true), delay); return ()=>clearTimeout(t); }, [delay]);
+  const icon = check.status==="pass" ? "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+             : check.status==="fail" ? "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+             : "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z";
+  const color = check.status==="pass" ? "var(--green)" : check.status==="fail" ? "var(--red)" : "var(--amber)";
+  return (
+    <div style={{
+      opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(6px)",
+      transition:`opacity 0.35s ease, transform 0.35s ease`,
+      display:"flex", alignItems:"center", gap:12,
+      padding:"10px 0", borderBottom:"1px solid var(--border-2)",
+    }}>
+      <span style={{color, flexShrink:0}}><Icon d={icon} size={16}/></span>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13, fontWeight:500, color:"var(--fg)"}}>{check.label}</div>
+        <div style={{fontSize:12, color:"var(--fg-3)", marginTop:2}}>{check.detail}</div>
+      </div>
+      <span style={{
+        fontSize:11, fontWeight:500, color,
+        background: check.status==="pass"?"var(--green-dim)":check.status==="fail"?"var(--red-dim)":"var(--amber-dim)",
+        padding:"2px 8px", borderRadius:99, textTransform:"capitalize",
+      }}>{check.status}</span>
+    </div>
+  );
+};
+
+const ActivityItem = ({ a, delay=0 }) => {
+  const [vis, setVis] = useState(false);
+  useEffect(() => { const t = setTimeout(()=>setVis(true), delay); return ()=>clearTimeout(t); }, [delay]);
+  const dotColor = a.type==="success"?"var(--green)":a.type==="warning"?"var(--amber)":"var(--accent)";
+  return (
+    <div style={{
+      opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(6px)",
+      transition:`opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms`,
+      display:"flex", gap:12, alignItems:"flex-start",
+    }}>
+      <div style={{display:"flex", flexDirection:"column", alignItems:"center", gap:0, paddingTop:4}}>
+        <div style={{
+          width:8, height:8, borderRadius:"50%", background:dotColor, flexShrink:0,
+          boxShadow:`0 0 0 3px ${a.type==="success"?"var(--green-dim)":a.type==="warning"?"var(--amber-dim)":"var(--accent-dim)"}`,
+        }}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13, fontWeight:500, color:"var(--fg)"}}>{a.text}</div>
+        <div style={{fontSize:12, color:"var(--fg-3)", marginTop:2}}>{a.sub}</div>
+      </div>
+      <span style={{fontSize:11, color:"var(--fg-3)", whiteSpace:"nowrap", paddingTop:2}}>{a.time}</span>
+    </div>
+  );
+};
+
+// ─── Views ───────────────────────────────────────────────────────────────────
+
+const DashboardView = ({ onSelectCandidate }) => (
+  <div key="dash" style={{display:"flex", flexDirection:"column", gap:24}}>
+    {/* Stats */}
+    <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12}}>
+      <StatCard label="Active Candidates" value="48" delta="+12%" icon="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" delay={0}/>
+      <StatCard label="Checks Completed" value="134" delta="+8%" icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-2.981z" delay={60}/>
+      <StatCard label="Avg. Risk Score" value="72" delta="+3pts" icon="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" delay={120}/>
+      <StatCard label="Offers Extended" value="6" delta="+2" icon="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" delay={180}/>
+    </div>
+
+    {/* Recent + Activity */}
+    <div style={{display:"grid", gridTemplateColumns:"1.3fr 1fr", gap:14}}>
+      {/* Recent Candidates */}
+      <div style={{
+        background:"var(--bg-2)", border:"1px solid var(--border)",
+        borderRadius:"var(--radius)", padding:"18px 16px", boxShadow:"var(--shadow-sm)",
+        animation:"fadeUp 0.45s 0.2s both",
+      }}>
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12}}>
+          <span style={{fontSize:13, fontWeight:500, color:"var(--fg)"}}>Recent Candidates</span>
+          <button onClick={()=>onSelectCandidate(null,'candidates')} style={{
+            fontSize:12, color:"var(--accent)", background:"none", border:"none",
+            cursor:"pointer", fontFamily:"inherit", padding:"2px 6px",
+            borderRadius:4, transition:"background var(--transition)",
+          }}>View all →</button>
+        </div>
+        {CANDIDATES.slice(0,5).map((c,i) => (
+          <CandidateRow key={c.id} c={c} onClick={()=>onSelectCandidate(c,'candidates')} delay={i*50}/>
+        ))}
+      </div>
+
+      {/* Activity Feed */}
+      <div style={{
+        background:"var(--bg-2)", border:"1px solid var(--border)",
+        borderRadius:"var(--radius)", padding:"18px 18px", boxShadow:"var(--shadow-sm)",
+        animation:"fadeUp 0.45s 0.28s both",
+      }}>
+        <div style={{fontSize:13, fontWeight:500, color:"var(--fg)", marginBottom:16}}>Live Activity</div>
+        <div style={{display:"flex", flexDirection:"column", gap:14}}>
+          {ACTIVITIES.map((a,i) => <ActivityItem key={a.id} a={a} delay={i*60}/>)}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const CandidatesView = ({ selected, onSelect }) => (
+  <div key="cands" style={{display:"grid", gridTemplateColumns:"1fr 1.6fr", gap:14, height:"100%"}}>
+    {/* List */}
+    <div style={{
+      background:"var(--bg-2)", border:"1px solid var(--border)",
+      borderRadius:"var(--radius)", padding:"16px 10px", overflowY:"auto",
+      boxShadow:"var(--shadow-sm)", animation:"fadeUp 0.4s both",
+    }}>
+      <div style={{padding:"0 6px 12px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+        <span style={{fontSize:13, fontWeight:500}}>All Candidates</span>
+        <span style={{fontSize:12, color:"var(--fg-3)", background:"var(--bg-3)", padding:"2px 8px", borderRadius:99}}>{CANDIDATES.length}</span>
+      </div>
+      {/* Search */}
+      <div style={{position:"relative", margin:"0 4px 10px"}}>
+        <span style={{position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"var(--fg-3)"}}>
+          <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={13}/>
+        </span>
+        <input placeholder="Search…" style={{
+          width:"100%", padding:"7px 10px 7px 30px",
+          background:"var(--bg-3)", border:"1px solid var(--border)",
+          borderRadius:"var(--radius-sm)", fontSize:12, color:"var(--fg)",
+          fontFamily:"inherit", outline:"none",
+          transition:"border-color var(--transition), box-shadow var(--transition)",
+        }}
+        onFocus={e=>{ e.target.style.borderColor="var(--accent)"; e.target.style.boxShadow="0 0 0 2px var(--accent-dim)"; }}
+        onBlur={e=>{ e.target.style.borderColor="var(--border)"; e.target.style.boxShadow="none"; }}
+        />
+      </div>
+      {CANDIDATES.map((c,i) => (
+        <CandidateRow key={c.id} c={c} selected={selected?.id===c.id} onClick={()=>onSelect(c)} delay={i*40}/>
+      ))}
+    </div>
+
+    {/* Detail */}
+    <div style={{
+      background:"var(--bg-2)", border:"1px solid var(--border)",
+      borderRadius:"var(--radius)", padding:"24px", overflowY:"auto",
+      boxShadow:"var(--shadow-sm)",
+      animation: selected ? "scaleIn 0.35s both" : "fadeIn 0.35s both",
+      key: selected?.id,
+    }}>
+      {selected ? <CandidateDetail c={selected}/> : (
+        <div style={{height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, color:"var(--fg-3)"}}>
+          <Icon d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" size={32}/>
+          <span style={{fontSize:13}}>Select a candidate</span>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const CandidateDetail = ({ c }) => (
+  <div key={c.id} style={{animation:"fadeUp 0.35s both"}}>
+    {/* Header */}
+    <div style={{display:"flex", alignItems:"flex-start", gap:16, marginBottom:24}}>
+      <Avatar initials={c.avatar} size={52}/>
+      <div style={{flex:1}}>
+        <div style={{display:"flex", alignItems:"center", gap:8}}>
+          <h2 style={{fontSize:18, fontWeight:500, letterSpacing:"-0.02em"}}>{c.name}</h2>
+          {c.verified && <span style={{color:"var(--accent)"}}><Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" size={16}/></span>}
+        </div>
+        <div style={{fontSize:13, color:"var(--fg-2)", marginTop:3}}>{c.role}</div>
+        <div style={{display:"flex", gap:6, marginTop:8, flexWrap:"wrap"}}>
+          {c.tags.map(t=>(
+            <span key={t} style={{fontSize:11, color:"var(--fg-2)", background:"var(--bg-3)", padding:"3px 9px", borderRadius:99, border:"1px solid var(--border)"}}>{t}</span>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex", flexDirection:"column", alignItems:"center", position:"relative"}}>
+        <ScoreRing score={c.score} size={52}/>
+        <span style={{
+          position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)",
+          fontSize:13, fontWeight:600, letterSpacing:"-0.03em",
+          color: c.score>=80?"var(--green)":c.score>=60?"var(--amber)":"var(--red)",
+        }}>{c.score}</span>
+      </div>
+    </div>
+
+    {/* Stage + Risk badges */}
+    <div style={{display:"flex", gap:8, marginBottom:22}}>
+      <span style={{
+        fontSize:12, fontWeight:500, color:stageColor(c.stage), background:stageBg(c.stage),
+        padding:"4px 12px", borderRadius:99, border:`1px solid ${stageColor(c.stage)}33`,
+      }}>Stage: {c.stage}</span>
+      <span style={{
+        fontSize:12, fontWeight:500, color:riskColor(c.risk), background:riskBg(c.risk),
+        padding:"4px 12px", borderRadius:99, border:`1px solid ${riskColor(c.risk)}33`,
+        textTransform:"capitalize",
+      }}>Risk: {c.risk}</span>
+      <span style={{fontSize:12, color:"var(--fg-3)", padding:"4px 12px", background:"var(--bg-3)", borderRadius:99}}>Applied {c.date}</span>
+    </div>
+
+    {/* Checks */}
+    <div style={{marginBottom:20}}>
+      <div style={{fontSize:12, fontWeight:500, color:"var(--fg-3)", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10}}>Background Checks</div>
+      {CHECKS.map((ck,i) => <CheckItem key={ck.label} check={ck} delay={i*45}/>)}
+    </div>
+
+    {/* Actions */}
+    <div style={{display:"flex", gap:8, paddingTop:4}}>
+      <button style={{
+        flex:1, padding:"9px 16px", borderRadius:"var(--radius-sm)",
+        background:"var(--accent)", color:"#fff", border:"none",
+        fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit",
+        transition:"opacity var(--transition), transform var(--transition), box-shadow var(--transition)",
+        boxShadow:"0 2px 8px var(--accent-mid)",
+      }}
+      onMouseEnter={e=>{e.target.style.opacity="0.88"; e.target.style.transform="translateY(-1px)";}}
+      onMouseLeave={e=>{e.target.style.opacity="1"; e.target.style.transform="translateY(0)";}}>
+        Advance Stage
+      </button>
+      <button style={{
+        flex:1, padding:"9px 16px", borderRadius:"var(--radius-sm)",
+        background:"var(--bg-3)", color:"var(--fg)", border:"1px solid var(--border)",
+        fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit",
+        transition:"background var(--transition), transform var(--transition)",
+      }}
+      onMouseEnter={e=>{e.target.style.background="var(--bg-3)"; e.target.style.transform="translateY(-1px)";}}
+      onMouseLeave={e=>{e.target.style.transform="translateY(0)";}}>
+        Flag for Review
+      </button>
+    </div>
+  </div>
+);
+
+const ChecksView = () => (
+  <div style={{animation:"fadeUp 0.4s both"}}>
+    <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20}}>
+      {[
+        {l:"Checks Running", v:"12", c:"var(--amber)"},
+        {l:"Completed Today", v:"28", c:"var(--green)"},
+        {l:"Flagged", v:"3", c:"var(--red)"},
+      ].map((s,i)=>(
+        <div key={s.l} style={{
+          background:"var(--bg-2)", border:"1px solid var(--border)", borderRadius:"var(--radius)",
+          padding:"20px", boxShadow:"var(--shadow-sm)",
+          animation:`fadeUp 0.4s ${i*60}ms both`,
+        }}>
+          <div style={{fontSize:12, color:"var(--fg-3)", marginBottom:8}}>{s.l}</div>
+          <div style={{fontSize:30, fontWeight:500, color:s.c, letterSpacing:"-0.04em"}}>{s.v}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{background:"var(--bg-2)", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"20px 22px", boxShadow:"var(--shadow-sm)"}}>
+      <div style={{fontSize:13, fontWeight:500, marginBottom:14}}>All Check Categories</div>
+      {CHECKS.map((ck,i) => <CheckItem key={ck.label} check={ck} delay={i*50}/>)}
+    </div>
+  </div>
+);
+
+const PlaceholderView = ({ label }) => (
+  <div style={{height:300, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, color:"var(--fg-3)", animation:"fadeUp 0.4s both"}}>
+    <div style={{width:48, height:48, borderRadius:"50%", background:"var(--bg-3)", display:"flex", alignItems:"center", justifyContent:"center"}}>
+      <Icon d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" size={22}/>
+    </div>
+    <span style={{fontSize:13, fontWeight:500}}>{label}</span>
+    <span style={{fontSize:12}}>Coming soon</span>
+  </div>
+);
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+
+function App() {
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('hg-dark');
+    if (saved !== null) return saved === 'true';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  const [nav, setNav] = useState('dashboard');
+  const [selected, setSelected] = useState(null);
+  const [sideCollapsed, setSideCollapsed] = useState(false);
+  const [tweaks, setTweaks] = useState(false);
+
+  // Tweaks defaults
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "accentHue": 210,
+    "density": "comfortable",
+    "fontScale": 1
+  }/*EDITMODE-END*/;
+  const [tw, setTw] = useState(TWEAK_DEFAULTS);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('hg-dark', dark);
+  }, [dark]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('hg-nav');
+    if (saved) setNav(saved);
+    const sel = localStorage.getItem('hg-sel');
+    if (sel) { const c = CANDIDATES.find(x=>x.id===+sel); if(c) setSelected(c); }
+  }, []);
+  useEffect(() => { localStorage.setItem('hg-nav', nav); }, [nav]);
+  useEffect(() => { localStorage.setItem('hg-sel', selected?.id ?? ''); }, [selected]);
+
+  // Tweaks host
+  useEffect(() => {
+    const handler = e => {
+      if (e.data?.type === '__activate_edit_mode') setTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaks(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const setTweak = (k, v) => {
+    setTw(p => {
+      const n = {...p, [k]:v};
+      window.parent.postMessage({type:'__edit_mode_set_keys', edits:n}, '*');
+      return n;
+    });
+  };
+
+  const goTo = (c, page) => { if(c) setSelected(c); if(page) setNav(page); };
+
+  const accentCss = `oklch(0.62 0.12 ${tw.accentHue})`;
+  const densityPad = tw.density === "compact" ? "14px 16px" : tw.density === "spacious" ? "28px 24px" : "20px 20px";
+
+  return (
+    <div style={{
+      display:"flex", height:"100vh", overflow:"hidden",
+      '--accent': accentCss,
+      '--accent-dim': `oklch(0.62 0.12 ${tw.accentHue} / 0.12)`,
+      '--accent-mid': `oklch(0.62 0.12 ${tw.accentHue} / 0.25)`,
+      fontSize: `${tw.fontScale * 14}px`,
+    }}>
+
+      {/* Sidebar */}
+      <aside style={{
+        width: sideCollapsed ? 58 : 210,
+        flexShrink:0, background:"var(--bg-2)", borderRight:"1px solid var(--border)",
+        display:"flex", flexDirection:"column",
+        transition:"width 0.35s cubic-bezier(0.25,0.46,0.45,0.94)",
+        overflow:"hidden",
+      }}>
+        {/* Logo */}
+        <div style={{
+          padding: sideCollapsed ? "20px 0" : "20px 18px",
+          display:"flex", alignItems:"center", justifyContent: sideCollapsed ? "center" : "space-between",
+          borderBottom:"1px solid var(--border)",
+        }}>
+          {!sideCollapsed && (
+            <div style={{display:"flex", alignItems:"center", gap:9}}>
+              <div style={{
+                width:28, height:28, borderRadius:7,
+                background:"var(--accent)", display:"flex", alignItems:"center", justifyContent:"center",
+                boxShadow:"0 2px 8px var(--accent-mid)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" fill="white" fillOpacity="0.9"/>
+                  <path d="M5.5 8l1.8 1.8L10.5 6" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span style={{fontSize:14, fontWeight:600, letterSpacing:"-0.02em", color:"var(--fg)"}}>HireGuard</span>
+            </div>
+          )}
+          {sideCollapsed && (
+            <div style={{
+              width:28, height:28, borderRadius:7,
+              background:"var(--accent)", display:"flex", alignItems:"center", justifyContent:"center",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" fill="white" fillOpacity="0.9"/>
+                <path d="M5.5 8l1.8 1.8L10.5 6" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          )}
+          {!sideCollapsed && (
+            <button onClick={()=>setSideCollapsed(true)} style={{
+              background:"none", border:"none", cursor:"pointer", color:"var(--fg-3)",
+              padding:4, borderRadius:4, display:"flex", transition:"color var(--transition)",
+            }}
+            onMouseEnter={e=>e.currentTarget.style.color="var(--fg)"}
+            onMouseLeave={e=>e.currentTarget.style.color="var(--fg-3)"}>
+              <Icon d="M11 19l-7-7 7-7" size={14}/>
+            </button>
+          )}
+          {sideCollapsed && (
+            <button onClick={()=>setSideCollapsed(false)} style={{display:"none"}}/>
+          )}
+        </div>
+
+        {sideCollapsed && (
+          <div style={{display:"flex", justifyContent:"center", padding:"10px 0 4px"}}>
+            <button onClick={()=>setSideCollapsed(false)} style={{
+              background:"none", border:"none", cursor:"pointer", color:"var(--fg-3)",
+              padding:6, borderRadius:4, display:"flex",
+            }}>
+              <Icon d="M9 5l7 7-7 7" size={14}/>
+            </button>
+          </div>
+        )}
+
+        {/* Nav items */}
+        <nav style={{flex:1, padding:"10px 8px", display:"flex", flexDirection:"column", gap:2}}>
+          {NAV.map(item => {
+            const active = nav === item.id;
+            return (
+              <button key={item.id} onClick={()=>setNav(item.id)} style={{
+                display:"flex", alignItems:"center", gap:10,
+                padding: sideCollapsed ? "10px 0" : "9px 10px",
+                justifyContent: sideCollapsed ? "center" : "flex-start",
+                borderRadius:"var(--radius-sm)", background: active ? "var(--accent-dim)" : "transparent",
+                color: active ? "var(--accent)" : "var(--fg-2)",
+                border:"none", cursor:"pointer", fontFamily:"inherit",
+                fontSize:13, fontWeight: active ? 500 : 400,
+                transition:"background var(--transition), color var(--transition), transform var(--transition)",
+                width:"100%", textAlign:"left",
+                position:"relative",
+              }}
+              onMouseEnter={e=>{if(!active){e.currentTarget.style.background="var(--bg-3)"; e.currentTarget.style.color="var(--fg)";}}}
+              onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent"; e.currentTarget.style.color="var(--fg-2)";}}}
+              >
+                {active && <div style={{
+                  position:"absolute", left:0, top:"20%", bottom:"20%",
+                  width:2.5, background:"var(--accent)", borderRadius:99,
+                }}/>}
+                <span style={{flexShrink:0, marginLeft: active && !sideCollapsed ? 3 : 0}}>
+                  <Icon d={item.icon} size={15}/>
+                </span>
+                {!sideCollapsed && <span style={{whiteSpace:"nowrap", overflow:"hidden"}}>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* User */}
+        {!sideCollapsed && (
+          <div style={{padding:"12px 14px", borderTop:"1px solid var(--border)", display:"flex", alignItems:"center", gap:10}}>
+            <Avatar initials="SL" size={28}/>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:12.5, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>Sarah Lee</div>
+              <div style={{fontSize:11, color:"var(--fg-3)"}}>HR Manager</div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Main */}
+      <div style={{flex:1, display:"flex", flexDirection:"column", overflow:"hidden"}}>
+        {/* Topbar */}
+        <header style={{
+          height:54, flexShrink:0, borderBottom:"1px solid var(--border)",
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"0 22px", background:"var(--bg)",
+        }}>
+          <div>
+            <h1 style={{fontSize:15, fontWeight:500, letterSpacing:"-0.01em"}}>
+              {NAV.find(n=>n.id===nav)?.label}
+            </h1>
+          </div>
+          <div style={{display:"flex", alignItems:"center", gap:10}}>
+            {/* New candidate */}
+            <button style={{
+              display:"flex", alignItems:"center", gap:6,
+              padding:"6px 13px", borderRadius:"var(--radius-sm)",
+              background:"var(--accent)", color:"#fff",
+              border:"none", fontSize:12.5, fontWeight:500, cursor:"pointer",
+              fontFamily:"inherit", boxShadow:"0 2px 6px var(--accent-mid)",
+              transition:"opacity var(--transition), transform var(--transition)",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.opacity="0.88"; e.currentTarget.style.transform="translateY(-1px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)";}}>
+              <Icon d="M12 4v16m8-8H4" size={13}/>
+              New Candidate
+            </button>
+
+            {/* Dark toggle */}
+            <button onClick={()=>setDark(!dark)} style={{
+              width:34, height:34, borderRadius:"var(--radius-sm)",
+              background:"var(--bg-2)", border:"1px solid var(--border)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              cursor:"pointer", color:"var(--fg-2)",
+              transition:"background var(--transition), color var(--transition), transform var(--transition)",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="var(--bg-3)"; e.currentTarget.style.color="var(--fg)"; e.currentTarget.style.transform="scale(1.05)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="var(--bg-2)"; e.currentTarget.style.color="var(--fg-2)"; e.currentTarget.style.transform="scale(1)";}}>
+              <Icon d={dark
+                ? "M12 3v1m0 16v1M4.22 4.22l.71.71m12.73 12.73l.71.71M1 12h1m20 0h-1M4.22 19.78l.71-.71M18.36 5.64l.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                : "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+              } size={15}/>
+            </button>
+
+            {/* Notifications */}
+            <button style={{
+              width:34, height:34, borderRadius:"var(--radius-sm)",
+              background:"var(--bg-2)", border:"1px solid var(--border)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              cursor:"pointer", color:"var(--fg-2)", position:"relative",
+              transition:"background var(--transition), transform var(--transition)",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="var(--bg-3)"; e.currentTarget.style.transform="scale(1.05)";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="var(--bg-2)"; e.currentTarget.style.transform="scale(1)";}}>
+              <Icon d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" size={15}/>
+              <div style={{
+                position:"absolute", top:7, right:7, width:6, height:6,
+                borderRadius:"50%", background:"var(--red)",
+                border:"1.5px solid var(--bg-2)",
+              }}/>
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main style={{flex:1, overflow:"auto", padding:densityPad, background:"var(--bg)"}}>
+          {nav === "dashboard" && <DashboardView onSelectCandidate={goTo}/>}
+          {nav === "candidates" && <CandidatesView selected={selected} onSelect={setSelected}/>}
+          {nav === "checks" && <ChecksView/>}
+          {nav === "reports" && <PlaceholderView label="Reports"/>}
+          {nav === "settings" && <PlaceholderView label="Settings"/>}
+        </main>
+      </div>
+
+      {/* Tweaks Panel */}
+      {tweaks && (
+        <div style={{
+          position:"fixed", bottom:20, right:20,
+          background:"var(--bg-2)", border:"1px solid var(--border)",
+          borderRadius:12, padding:"18px 20px", width:240,
+          boxShadow:"var(--shadow-lg)", zIndex:999,
+          animation:"scaleIn 0.25s both",
+        }}>
+          <div style={{fontSize:13, fontWeight:600, marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+            Tweaks
+            <button onClick={()=>setTweaks(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--fg-3)",padding:2}}>
+              <Icon d="M6 18L18 6M6 6l12 12" size={13}/>
+            </button>
+          </div>
+
+          <div style={{display:"flex", flexDirection:"column", gap:14}}>
+            <div>
+              <label style={{fontSize:11, color:"var(--fg-3)", display:"block", marginBottom:6}}>Accent Color</label>
+              <div style={{display:"flex", gap:6}}>
+                {[210,160,280,40,10].map(h=>(
+                  <button key={h} onClick={()=>setTweak('accentHue',h)} style={{
+                    width:24, height:24, borderRadius:"50%",
+                    background:`oklch(0.62 0.12 ${h})`,
+                    border: tw.accentHue===h ? "2px solid var(--fg)" : "2px solid transparent",
+                    cursor:"pointer", transition:"transform var(--transition), border-color var(--transition)",
+                    transform: tw.accentHue===h ? "scale(1.15)" : "scale(1)",
+                  }}/>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={{fontSize:11, color:"var(--fg-3)", display:"block", marginBottom:6}}>Density</label>
+              <div style={{display:"flex", gap:4}}>
+                {["compact","comfortable","spacious"].map(d=>(
+                  <button key={d} onClick={()=>setTweak('density',d)} style={{
+                    flex:1, fontSize:10.5, padding:"5px 4px",
+                    borderRadius:5, border:`1px solid ${tw.density===d?"var(--accent)":"var(--border)"}`,
+                    background: tw.density===d ? "var(--accent-dim)" : "var(--bg-3)",
+                    color: tw.density===d ? "var(--accent)" : "var(--fg-3)",
+                    cursor:"pointer", fontFamily:"inherit", textTransform:"capitalize",
+                    transition:"all var(--transition)",
+                  }}>{d}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={{fontSize:11, color:"var(--fg-3)", display:"block", marginBottom:6}}>Font Scale — {tw.fontScale}×</label>
+              <input type="range" min={0.85} max={1.15} step={0.05} value={tw.fontScale}
+                onChange={e=>setTweak('fontScale',+e.target.value)}
+                style={{width:"100%", accentColor:"var(--accent)"}}
+              />
+            </div>
+
+            <div style={{paddingTop:4, borderTop:"1px solid var(--border-2)"}}>
+              <button onClick={()=>setDark(!dark)} style={{
+                width:"100%", padding:"7px", borderRadius:"var(--radius-sm)",
+                background:"var(--bg-3)", border:"1px solid var(--border)",
+                color:"var(--fg-2)", fontSize:12, cursor:"pointer", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                transition:"background var(--transition)",
+              }}>
+                <Icon d={dark?"M12 3v1m0 16v1M4.22 4.22l.71.71m12.73 12.73l.71.71M1 12h1m20 0h-1M4.22 19.78l.71-.71M18.36 5.64l.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z":"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"} size={13}/>
+                {dark ? "Light Mode" : "Dark Mode"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
