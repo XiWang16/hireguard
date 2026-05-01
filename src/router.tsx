@@ -18,7 +18,8 @@ const JobPipelinePage   = lazy(() => import("./pages/JobPipelinePage"));
 const CandidateListPage = lazy(() => import("./pages/CandidateListPage"));
 const CandidateDetailPage = lazy(() => import("./pages/CandidateDetailPage"));
 const AuditPage         = lazy(() => import("./pages/AuditPage"));
-const GlobalAuditPage   = lazy(() => import("./pages/GlobalAuditPage"));
+const GlobalAuditPage    = lazy(() => import("./pages/GlobalAuditPage"));
+const ExperimentsPage   = lazy(() => import("./pages/ExperimentsPage"));
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -107,6 +108,12 @@ const globalAuditRoute = createRoute({
   component: GlobalAuditPage,
 });
 
+const experimentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/experiments",
+  component: ExperimentsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   dashboardRoute,
   candidatesRoute,
@@ -119,6 +126,7 @@ const routeTree = rootRoute.addChildren([
   candidateDetailRoute,
   auditRoute,
   globalAuditRoute,
+  experimentsRoute,
 ]);
 
 export const router = createRouter({ routeTree });

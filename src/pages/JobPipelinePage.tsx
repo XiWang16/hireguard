@@ -13,7 +13,7 @@ import {
 import { useState, useMemo } from "react";
 import { StatusBadge } from "../components/StatusBadge";
 import { ScoreBar } from "../components/ScoreBar";
-import { AgentActivityFeed } from "../components/AgentActivityFeed";
+import { AgentLogTimeline } from "../components/AgentLogTimeline";
 import { ResumeUpload } from "../components/ResumeUpload";
 import { useFilterStore } from "../stores/useFilterStore";
 import { useDashboardStore } from "../stores/useDashboardStore";
@@ -301,9 +301,14 @@ export default function JobPipelinePage() {
         )}
 
         {activeTab === "agents" && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h2 className="text-sm font-medium text-gray-900 mb-3">Agent Activity</h2>
-            <AgentActivityFeed jobId={jobId as Id<"jobs">} />
+          <div
+            className="rounded-[12px] p-5"
+            style={{ background: "var(--bg-2)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+          >
+            <h2 className="text-[13.5px] font-medium mb-4" style={{ color: "var(--fg)" }}>
+              Agent Pipeline
+            </h2>
+            <AgentLogTimeline jobId={jobId as Id<"jobs">} />
           </div>
         )}
       </main>

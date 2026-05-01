@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type NavKey = "dashboard" | "candidates" | "checks" | "reports" | "settings";
+export type NavKey = "dashboard" | "candidates" | "checks" | "reports" | "experiments" | "settings";
 
 interface UIStore {
   darkMode: boolean;

@@ -153,6 +153,61 @@ export const getCandidateWithEvaluation = query({
   },
 });
 
+export const insertSeedCandidate = internalMutation({
+  // v.any() for demographics/parsedData — these are already v.any() in the schema
+  args: {
+    name: v.string(),
+    email: v.string(),
+    jobId: v.id("jobs"),
+    role: v.string(),
+    appliedAt: v.number(),
+    status: v.string(),
+    stage: v.string(),
+    riskLevel: v.string(),
+    score: v.number(),
+    tags: v.array(v.string()),
+    verified: v.boolean(),
+    demographics: v.any(),
+    parsedData: v.any(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("candidates", {
+      name: args.name,
+      email: args.email,
+      jobId: args.jobId,
+      role: args.role,
+      appliedAt: args.appliedAt,
+      status: args.status as "received" | "parsing" | "evaluated" | "shortlisted" | "rejected" | "hired",
+      stage: args.stage as "Screening" | "Interview" | "Review" | "Offer",
+      riskLevel: args.riskLevel as "low" | "medium" | "high",
+      score: args.score,
+      tags: args.tags,
+      verified: args.verified,
+      demographics: args.demographics,
+      parsedData: args.parsedData,
+    });
+  },
+});
+
+export const clearAllData = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const [jobs, candidates, evaluations, auditReports, agentLogs, backgroundChecks, activityLog] =
+      await Promise.all([
+        ctx.db.query("jobs").collect(),
+        ctx.db.query("candidates").collect(),
+        ctx.db.query("evaluations").collect(),
+        ctx.db.query("auditReports").collect(),
+        ctx.db.query("agentLogs").collect(),
+        ctx.db.query("backgroundChecks").collect(),
+        ctx.db.query("activityLog").collect(),
+      ]);
+    for (const doc of [...jobs, ...candidates, ...evaluations, ...auditReports, ...agentLogs, ...backgroundChecks, ...activityLog]) {
+      await ctx.db.delete(doc._id);
+    }
+  },
+});
+
 export const updateCandidateStatusPublic = mutation({
   args: {
     candidateId: v.id("candidates"),

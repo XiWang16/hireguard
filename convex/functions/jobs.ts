@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalQuery, mutation, query } from "../_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "../_generated/server";
 
 export const listJobsInternal = internalQuery({
   args: { status: v.optional(v.union(v.literal("open"), v.literal("closed"), v.literal("paused"))) },
@@ -52,6 +52,33 @@ export const createJob = mutation({
       createdAt: Date.now(),
     });
     return jobId;
+  },
+});
+
+export const insertSeedJob = internalMutation({
+  args: {
+    title: v.string(),
+    department: v.string(),
+    description: v.string(),
+    requiredSkills: v.array(v.string()),
+    shortlistThreshold: v.number(),
+    rejectionThreshold: v.number(),
+    adverseImpactThreshold: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("jobs", {
+      title: args.title,
+      department: args.department,
+      description: args.description,
+      requiredSkills: args.requiredSkills,
+      status: "open",
+      createdAt: Date.now(),
+      rankingConfig: {
+        shortlistThreshold: args.shortlistThreshold,
+        rejectionThreshold: args.rejectionThreshold,
+        adverseImpactThreshold: args.adverseImpactThreshold,
+      },
+    });
   },
 });
 

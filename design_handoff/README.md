@@ -229,24 +229,38 @@ The prototype uses mock data. Map it to real Convex tables:
 candidates: defineTable({
   name: v.string(),
   role: v.string(),
+  dept: v.string(),
   stage: v.union(v.literal("Screening"), v.literal("Interview"), v.literal("Review"), v.literal("Offer")),
   riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
-  score: v.number(),          // 0–100
+  score: v.number(),          // 0–100, overall trust/hire score
   tags: v.array(v.string()),
   verified: v.boolean(),
   appliedAt: v.number(),      // Unix ms
+  email: v.string(),
+  location: v.string(),
+  experienceYears: v.string(),
+  notes: v.string(),          // Internal HR notes
 }),
 
+// Background checks are per-candidate (6 fixed categories per candidate).
+// NOT a global table — each candidate owns their own check results.
 backgroundChecks: defineTable({
   candidateId: v.id("candidates"),
-  label: v.string(),
+  label: v.union(
+    v.literal("Identity Verification"),
+    v.literal("Employment History"),
+    v.literal("Education Records"),
+    v.literal("Criminal Background"),
+    v.literal("Credit Check"),
+    v.literal("Reference Checks"),
+  ),
   status: v.union(v.literal("pass"), v.literal("fail"), v.literal("pending")),
-  detail: v.string(),
+  detail: v.string(),         // Human-readable detail, e.g. "3 of 3 employers verified"
 }),
 
 activityLog: defineTable({
   text: v.string(),
-  subtext: v.string(),
+  subtext: v.string(),        // "Candidate Name · Role"
   type: v.union(v.literal("success"), v.literal("warning"), v.literal("info")),
   createdAt: v.number(),
 }),

@@ -122,20 +122,30 @@ function ShieldLogo() {
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
+function BeakerIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 3h6M9 3v7.5L4.5 17A2 2 0 0 0 6.31 20h11.38a2 2 0 0 0 1.81-3L15 10.5V3M9 3H7M15 3h2" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS: { id: NavKey; label: string; href: string; icon: ReactNode }[] = [
-  { id: "dashboard",  label: "Dashboard",  href: "/",          icon: <HomeIcon /> },
-  { id: "candidates", label: "Candidates", href: "/candidates", icon: <UsersIcon /> },
-  { id: "checks",     label: "Checks",     href: "/checks",     icon: <ShieldCheckIcon /> },
-  { id: "reports",    label: "Reports",    href: "/reports",    icon: <ChartBarIcon /> },
-  { id: "settings",   label: "Settings",   href: "/settings",   icon: <CogIcon /> },
+  { id: "dashboard",   label: "Dashboard",   href: "/",            icon: <HomeIcon /> },
+  { id: "candidates",  label: "Candidates",  href: "/candidates",  icon: <UsersIcon /> },
+  { id: "checks",      label: "Checks",      href: "/checks",      icon: <ShieldCheckIcon /> },
+  { id: "reports",     label: "Reports",     href: "/reports",     icon: <ChartBarIcon /> },
+  { id: "experiments", label: "Experiments", href: "/experiments", icon: <BeakerIcon /> },
+  { id: "settings",    label: "Settings",    href: "/settings",    icon: <CogIcon /> },
 ];
 
 const PAGE_TITLES: Record<NavKey, string> = {
-  dashboard:  "Dashboard",
-  candidates: "Candidates",
-  checks:     "Background Checks",
-  reports:    "Reports",
-  settings:   "Settings",
+  dashboard:   "Dashboard",
+  candidates:  "Candidates",
+  checks:      "Background Checks",
+  reports:     "Reports",
+  experiments: "Experiments",
+  settings:    "Settings",
 };
 
 function getActiveNav(pathname: string): NavKey {
@@ -143,6 +153,7 @@ function getActiveNav(pathname: string): NavKey {
   if (pathname.startsWith("/candidates")) return "candidates";
   if (pathname.startsWith("/checks")) return "checks";
   if (pathname.startsWith("/reports")) return "reports";
+  if (pathname.startsWith("/experiments")) return "experiments";
   if (pathname.startsWith("/settings")) return "settings";
   return "dashboard";
 }

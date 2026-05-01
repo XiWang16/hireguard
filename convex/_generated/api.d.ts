@@ -23,6 +23,7 @@ import type * as functions_dashboardStats from "../functions/dashboardStats.js";
 import type * as functions_evaluations from "../functions/evaluations.js";
 import type * as functions_jobs from "../functions/jobs.js";
 import type * as functions_pipeline from "../functions/pipeline.js";
+import type * as functions_seed from "../functions/seed.js";
 import type * as lib_env from "../lib/env.js";
 import type * as myFunctions from "../myFunctions.js";
 
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   "functions/evaluations": typeof functions_evaluations;
   "functions/jobs": typeof functions_jobs;
   "functions/pipeline": typeof functions_pipeline;
+  "functions/seed": typeof functions_seed;
   "lib/env": typeof lib_env;
   myFunctions: typeof myFunctions;
 }>;
