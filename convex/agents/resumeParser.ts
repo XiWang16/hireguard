@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { Agent, createTool } from "@convex-dev/agent";
-import { anthropic } from "@ai-sdk/anthropic";
+import { getLanguageModel } from "../lib/modelConfig";
 import { components } from "../_generated/api";
 import { z } from "zod/v4";
 import { requireEnv } from "../lib/env";
@@ -93,7 +93,7 @@ const writeExtractedDataTool = createTool({
 
 export const resumeParserAgent = new Agent(components.agent, {
   name: "ResumeParser",
-  languageModel: anthropic("claude-sonnet-4-5"),
+  languageModel: getLanguageModel("resumeParser"),
   instructions:
     "You are a resume parsing specialist. Extract structured information from resume text: contact details, work history (company, title, duration, responsibilities), education, skills, certifications. Return structured JSON. Be thorough but do not infer skills not explicitly stated.",
   tools: { parseResume: parseResumeTool, writeExtractedData: writeExtractedDataTool },

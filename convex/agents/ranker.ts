@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { Agent, createTool } from "@convex-dev/agent";
-import { anthropic } from "@ai-sdk/anthropic";
+import { getLanguageModel } from "../lib/modelConfig";
 import { components } from "../_generated/api";
 import { z } from "zod/v4";
 
@@ -67,7 +67,7 @@ const updateCandidateStatusBatchTool = createTool({
 
 export const rankerAgent = new Agent(components.agent, {
   name: "Ranker",
-  languageModel: anthropic("claude-sonnet-4-5"),
+  languageModel: getLanguageModel("ranker"),
   instructions:
     "You are a candidate ranking specialist. Given evaluation scores for all candidates for a job, rank them and apply threshold-based decisions. Candidates above the shortlist threshold are shortlisted; below the rejection threshold are rejected; others remain in evaluated status. Provide a clear ranking rationale.",
   tools: {

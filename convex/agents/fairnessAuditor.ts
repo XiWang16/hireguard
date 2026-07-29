@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { Agent, createTool } from "@convex-dev/agent";
-import { anthropic } from "@ai-sdk/anthropic";
+import { getLanguageModel } from "../lib/modelConfig";
 import { components } from "../_generated/api";
 import { z } from "zod/v4";
 import { requireEnv } from "../lib/env";
@@ -94,7 +94,7 @@ const sendAlertTool = createTool({
 
 export const fairnessAuditorAgent = new Agent(components.agent, {
   name: "FairnessAuditor",
-  languageModel: anthropic("claude-sonnet-4-5"),
+  languageModel: getLanguageModel("fairnessAuditor"),
   instructions:
     "You are a fairness auditing specialist. You analyze hiring outcomes for adverse impact against protected characteristics. Apply the EEOC four-fifths rule: if any group's pass rate is less than 80% of the highest group's pass rate, flag adverse impact. Run chi-square independence tests for statistical significance. When flagging issues, provide specific, actionable recommendations — not vague warnings. Reference the specific demographic groups and metrics involved.",
   tools: {

@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { Agent, createTool } from "@convex-dev/agent";
-import { anthropic } from "@ai-sdk/anthropic";
+import { getLanguageModel } from "../lib/modelConfig";
 import { components } from "../_generated/api";
 import { z } from "zod/v4";
 
@@ -78,7 +78,7 @@ const writeEvaluationTool = createTool({
 
 export const skillMatcherAgent = new Agent(components.agent, {
   name: "SkillMatcher",
-  languageModel: anthropic("claude-sonnet-4-5"),
+  languageModel: getLanguageModel("skillMatcher"),
   instructions:
     "You are a skill matching specialist for candidate evaluation. You score candidates objectively based on their skills, experience, and education against job requirements. Each score must be 0-100. Provide detailed reasoning that HR reviewers can understand and audit. NEVER consider demographic information — evaluate only professional qualifications.",
   tools: {
